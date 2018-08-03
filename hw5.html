@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+    <link rel="stylesheet" href="hw5.css">
+    <head>
+    <script>
+        var canvas;
+        var dropArea;
+        var j=0;
+        var k=0;
+        var flagPlayStart = false;
+        var flagPlayStop = true;
+        var varMy;
+        var sliderVal = .825*1000;
+            
+        var maxCheckboxes = 16;
+		var maxRadioButtons = 16;
+		var radioButtonArray = new Array();
+		var audioArray = new Array();
+        var matrix =  new Array()
+        var instrumentNum;
+        var checkboxArray = new Array(5);
+        
+            
+        function addInputControl(type, targetId) {
+
+			var element = document.createElement("input");  //Create an input type dynamically.
+			element.type = type;
+			var el = document.getElementById(targetId);
+			el.appendChild(element);
+			return element;     // returns the newly created element
+		}
+        
+        function populateControl(){
+            deleteControl();
+            
+            var controlElement = document.createElement("div");
+//            var controlDrop = document.createElement("div");
+            controlElement.innerHTML = '';
+            
+            controlElement.id = 'subcontrol';
+//            controlDrop.id = 'dropBox';
+            
+            document.getElementById("control").appendChild( controlElement );
+//            document.getElementById("control").appendChild( controlDrop );
+            
+            var subElement = document.getElementById("subcontrol");
+            
+            numRows = document.getElementById("mySelect")[document.getElementById("mySelect").selectedIndex].value
+
+            for(var c=0; c<numRows; c++){
+                txt = document.createTextNode((c+1));
+                subElement.appendChild( txt );
+                var checkboxArray = new Array();
+                
+                for(var j=0; j<maxCheckboxes; j++){  
+                    checkboxArray[j] = addInputControl("checkbox", "subcontrol");
+                    
+                }
+                var drop = document.createElement("div");
+                drop.setAttribute("style", 'display:inline-block; width:90px; height:90px; background-color: white; border: 3px solid blue;');
+
+                drop.setAttribute('ondrop', 'drop(event)');
+                drop.setAttribute('ondragover', 'allowDrop(event)');
+                
+                drop.setAttribute("id", "newValue"+c);
+                drop.setAttribute("class", "canvas");
+                
+                subElement.appendChild(drop);
+                
+                matrix[c] = checkboxArray;
+
+            }
+            window.addEventListener('load', setup, false);
+		}
+        
+        function tempoCircles(){
+            for(var j=0; j<maxRadioButtons; j++){
+					radioButtonArray[j] = addInputControl("radio", "temp");
+                    radioButtonArray[j].disabled = true;
+            }
+            
+            prepareAudio();
+            
+        }
+
+        function deleteControl(){
+            if( document.getElementById("subcontrol") != null )
+            document.getElementById("control").removeChild(document.getElementById("subcontrol"));
+        }
+
+        function flipflag(){
+            flagPlayStart = !flagPlayStart
+            if(flagPlayStart){
+                toggleButtons();
+            }
+            
+            else{
+                clearTimeout(varMy)
+            }
+        }
+      
+        function flipflag1(){
+            flagPlayStop = !flagPlayStop
+            if (flagPlayStart == true){
+                if(flagPlayStop){
+                    toggleButtons();
+                }
+
+                else{
+                    clearTimeout(varMy)
+                }
+            }
+        }
+        
+        function update(val){
+            sliderVal = (val*1000)
+            //console.log(sliderVal);
+        }
+        
+        function change(value){
+            instrumentNum = value;
+            //populateControl();
+        }
+            
+        function toggleButtons(){
+            radioButtonArray[j].checked = !radioButtonArray[j].checked;
+            if(j!=0){
+                radioButtonArray[j-1].checked = !radioButtonArray[j-1].checked;
+            }
+            else if (j==0 && radioButtonArray[maxRadioButtons-1].checked){
+                 radioButtonArray[maxRadioButtons-1].checked = !radioButtonArray[maxRadioButtons-1].checked;  
+            }
+            j++;
+            if (j>15){
+                j=0
+            }
+        
+            for(var m=0; m<matrix.length; m++){
+                if (matrix[m][k].checked){
+                    var instru=  document.getElementById("newValue"+m).firstChild.getAttribute("value");
+                    console.log(instru);
+                    playAudio(instru);
+                }
+            }
+            k++;
+            if (k>15){
+                k=0
+            }
+            
+            varMy = setTimeout("toggleButtons()",2000-((sliderVal)));
+		}
+            
+        function prepareAudio(){
+			audioArray[0] = document.createElement("audio");  //  add audio
+			audioArray[0].src = 'snare.mp3';
+			audioArray[1] = document.createElement("audio");  //  add audio
+			audioArray[1].src = 'hihat.mp3';
+            audioArray[2] = document.createElement("audio");  //  add audio
+			audioArray[2].src = 'maraca.mp3';
+			audioArray[3] = document.createElement("audio");  //  add audio
+			audioArray[3].src = 'piano.wav';
+            audioArray[4] = document.createElement("audio");  //  add audio
+			audioArray[4].src = 'tambourine.wav';
+		}
+
+		function playAudio(index){
+
+            audioArray[index].currentTime = 0;
+			audioArray[index].play();
+        /*    console.log(audioArray[index]);*/
+			audioArray[index].volume = 1;
+		}
+        
+		function setup(){
+			var images=document.querySelectorAll('#instruments > img');
+			for(var i=0; i<images.length; i++){
+                //event listeners for each image... the start and stop dragging
+				images[i].addEventListener('dragstart', dragStart);
+				images[i].addEventListener('dragend', dragEnd);
+			}
+			dropArea = document.getElementById('dropBox');
+			//dropArea.addEventListener('dragenter', function(e){ e.preventDefault( ); });
+			dropArea.addEventListener('dragover', function(e){	e.preventDefault( ); });
+			dropArea.addEventListener('drop', dropped);
+		}
+		function dragEnd(e){
+			e.target.style.visibility='hidden'; // make the source invisible once dropped
+		}
+		function dragStart(e){
+			e.dataTransfer.setData('Text', e.target.getAttribute('id'));
+		}
+		function dropped(e){
+			e.preventDefault();
+			var id=e.dataTransfer.getData('Text');
+			var elem=document.getElementById(id);
+			var posx=e.pageX-dropArea.offsetLeft-Math.floor(elem.width/2);
+			var posy=e.pageY-dropArea.offsetTop-Math.floor(elem.height/2);
+			canvas.drawImage(elem, posx, posy);
+		}
+        
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function dragStart(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+            
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            ev.target.appendChild(document.getElementById(data));
+        }
+        
+    </script>
+        
+    
+    </head>
+    
+<body onload="populateControl(), tempoCircles()">
+        <h1>The Rhythm App</h1>
+        
+    <div id="control"></div>
+
+    <div id="temp"></div>
+    
+        <div id = "switches">
+            <button id = "play" onclick = "flipflag(this.id)">Play</button>
+            <button id = "stop" onclick = "flipflag1(this.id)">Stop</button>
+            <input min = "0.25" max = "1.5" type="range" step = ".01" value="0.825" onchange="update(this.value)">
+            <select id="mySelect" onchange="populateControl()">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+            </select>
+            
+    </div>
+        
+    
+        <section id="instruments">
+            <img id = "snare" value = 0 src="S.jpg" style="width:80px;height:80px; border: 3px solid blue" draggable="true" ondragstart="dragStart(event)">
+
+            <img id = "hithat" value = 1 src="HH.jpg" style="width:80px;height:80px; border: 3px solid blue" draggable="true" ondragstart="dragStart(event)">
+            
+            <img id = "maraca" value = 2 src="M.png" style="width:80px;height:80px; border: 3px solid blue" draggable="true" ondragstart="dragStart(event)"> 
+
+            <img id = "piano" value = 3 src="P.jpg" style="width:80px;height:80px; border: 3px solid blue" draggable="true" ondragstart="dragStart(event)">
+
+            <img id = "tambourine" value = 4 src="T.jpg" style="width:80px;height:80px; border: 3px solid blue" draggable="true" ondragstart="dragStart(event)">
+	</section>
+    
+    <h1>Copywrite Nate And PT</h1>
+        
+    </body>
+
+</html>
